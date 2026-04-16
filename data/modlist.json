@@ -1,0 +1,9 @@
+[
+  { "name": "SKSE64",                                    "version": "2.2.6",   "required": true,  "enabled": true  },
+  { "name": "SkyMP Client",                              "version": "0.8.2",   "required": true,  "enabled": true  },
+  { "name": "Address Library for SKSE",                  "version": "11.0.0",  "required": true,  "enabled": true  },
+  { "name": "SkyUI",                                     "version": "5.2.1",   "required": false, "enabled": true  },
+  { "name": "Unofficial Skyrim Special Edition Patch",   "version": "4.3.0",   "required": false, "enabled": true  },
+  { "name": "A Quality World Map",                       "version": "9.0.1",   "required": false, "enabled": false },
+  { "name": "Enhanced Lights and FX",                    "version": "3.05",    "required": false, "enabled": false }
+]

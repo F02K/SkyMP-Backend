@@ -1,51 +1,37 @@
 const router = require('express').Router()
 const https  = require('https')
-const fs     = require('fs')
 const config = require('../config')
-
-const REDIRECT_URI = 'http://localhost:4000/auth/callback'
-
-function getDiscordConfig() {
-  try {
-    const settings = JSON.parse(fs.readFileSync(config.serverSettingsPath, 'utf8'))
-    return settings.discordAuth || null
-  } catch {
-    return null
-  }
-}
 
 // GET /auth/discord/url — returns the Discord OAuth authorization URL
 router.get('/url', (_req, res) => {
-  const dc = getDiscordConfig()
-  if (!dc?.clientId) {
-    return res.status(503).json({ error: 'Discord auth not configured on this server' })
+  if (!config.discordClientId) {
+    return res.status(503).json({ error: 'Discord auth not configured on this server.' })
   }
   const params = new URLSearchParams({
-    client_id:     dc.clientId,
-    redirect_uri:  REDIRECT_URI,
+    client_id:     config.discordClientId,
+    redirect_uri:  config.discordRedirectUri,
     response_type: 'code',
     scope:         'identify',
   })
   res.json({ url: `https://discord.com/api/oauth2/authorize?${params}` })
 })
 
-// GET /auth/discord/exchange?code=... — exchanges code for user info (clientSecret stays here)
+// GET /auth/discord/exchange?code=... — exchanges code for user info
 router.get('/exchange', async (req, res) => {
   const { code } = req.query
-  if (!code) return res.status(400).json({ error: 'Missing code' })
+  if (!code) return res.status(400).json({ error: 'Missing code.' })
 
-  const dc = getDiscordConfig()
-  if (!dc?.clientId || !dc?.clientSecret) {
-    return res.status(503).json({ error: 'Discord auth not fully configured (missing clientSecret)' })
+  if (!config.discordClientId || !config.discordClientSecret) {
+    return res.status(503).json({ error: 'Discord auth not fully configured (missing credentials).' })
   }
 
   try {
     const tokenData = await discordTokenExchange({
-      client_id:     dc.clientId,
-      client_secret: dc.clientSecret,
+      client_id:     config.discordClientId,
+      client_secret: config.discordClientSecret,
       grant_type:    'authorization_code',
       code,
-      redirect_uri:  REDIRECT_URI,
+      redirect_uri:  config.discordRedirectUri,
     })
 
     const user = await discordGetUser(tokenData.access_token)
@@ -53,10 +39,12 @@ router.get('/exchange', async (req, res) => {
     res.json({
       ok: true,
       user: {
-        id:          user.id,
-        username:    user.global_name || user.username,
-        tag:         user.discriminator !== '0' ? `${user.username}#${user.discriminator}` : user.username,
-        avatar:      user.avatar
+        id:       user.id,
+        username: user.global_name || user.username,
+        tag:      user.discriminator !== '0'
+          ? `${user.username}#${user.discriminator}`
+          : user.username,
+        avatar: user.avatar
           ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`
           : null,
       },

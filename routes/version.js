@@ -5,7 +5,7 @@ const router = require('express').Router()
  * Set DOWNLOAD_URL to the installer download link (e.g. a GitHub Releases URL).
  */
 const LATEST_VERSION = '1.0.0'
-const DOWNLOAD_URL   = '' // e.g. 'https://github.com/T3CC4/frostfall-launcher/releases/latest'
+const DOWNLOAD_URL   = '' // e.g. 'https://github.com/F02K/frostfall-launcher/releases/latest'
 
 router.get('/', (_req, res) => {
   res.json({
