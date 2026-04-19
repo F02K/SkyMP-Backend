@@ -1,9 +1,4 @@
 [
-  { "name": "SKSE64",                                    "version": "2.2.6",   "required": true,  "enabled": true,  "source": "backend" },
-  { "name": "SkyMP Client",                              "version": "0.8.2",   "required": true,  "enabled": true,  "source": "backend" },
-  { "name": "Address Library for SKSE",                  "version": "11.0.0",  "required": true,  "enabled": true,  "source": "nexus",   "nexusId": 32444, "fileId": 720756 },
-  { "name": "SkyUI",                                     "version": "6.8",   "required": true, "enabled": true,  "source": "nexus",   "nexusId": 12604, "fileId": 739315 },
-  { "name": "Unofficial Skyrim Special Edition Patch",   "version": "4.3.8a",   "required": false, "enabled": false,  "source": "nexus",   "nexusId": 266,  "fileId": 73384 },
-  { "name": "A Quality World Map",                       "version": "9.0.1",   "required": true, "enabled": true, "source": "nexus",   "nexusId": 5804, "fileId": 13792 },
-  { "name": "Enhanced Lights and FX",                    "version": "3.06",    "required": true, "enabled": true, "source": "nexus",   "nexusId": 2424, "fileId": 35608  }
+  { "name": "SkyMP Client", "version": "0.8.2", "required": true, "enabled": true, "source": "backend" },
+  { "name": "Frostfall Collection", "required": true, "enabled": true, "source": "collection", "collectionSlug": "0fwxbh", "revisionId": 1 }
 ]
