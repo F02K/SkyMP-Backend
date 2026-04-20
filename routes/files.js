@@ -14,11 +14,22 @@
 const router = require('express').Router()
 const path   = require('path')
 const fs     = require('fs')
+const rateLimit = require('express-rate-limit')
 
 const ZIP_PATH     = path.join(__dirname, '..', 'public', 'files', 'frostfall-client.zip')
 const VERSION_PATH = path.join(__dirname, '..', 'data', 'files-version.json')
 
 const NOT_BUILT = { error: 'File package not found. Run `npm run merge` on the server first.' }
+
+const filesRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' }
+})
+
+router.use(filesRateLimiter)
 
 // ── GET /api/files/version ────────────────────────────────────────────────────
 
