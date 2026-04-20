@@ -15,6 +15,8 @@ router.get('/', (_req, res) => {
     masterUrl:           config.masterUrl         || null,
     // Lockdown state — launcher uses this to show an indicator and block Play
     locked:              config.serverLocked,
+    // Discord user IDs that may still connect even when the server is locked.
+    lockedAllowList:     config.serverLockedAllowList,
   })
 })
 
