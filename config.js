@@ -35,4 +35,13 @@ module.exports = {
   // ── Metrics HTTP auth (Basic auth for the game server's /metrics endpoint) ──
   metricsUser:     process.env.METRICS_USER     || '',
   metricsPassword: process.env.METRICS_PASSWORD || '',
+
+  // ── Server lockdown ─────────────────────────────────────────────────────────
+  // When true, only Discord users whose IDs appear in serverLockedAllowList
+  // can connect.  Everyone else receives loginFailedServerLocked from the TS
+  // server and the launcher shows a "Server locked" indicator.
+  serverLocked:          process.env.SERVER_LOCKED === 'true',
+  // Comma-separated list of Discord snowflake IDs that may still connect.
+  serverLockedAllowList: (process.env.SERVER_LOCKED_ALLOW || '')
+    .split(',').map(s => s.trim()).filter(Boolean),
 }

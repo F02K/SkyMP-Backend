@@ -28,6 +28,7 @@ const router = require('express').Router()
 const crypto = require('crypto')
 const fs     = require('fs')
 const path   = require('path')
+const config = require('../config')
 
 // ── Persistent Discord → profileId mapping ────────────────────────────────────
 
@@ -94,6 +95,14 @@ router.get('/servers/:key/sessions/:session', (req, res) => {
   const entry = sessions.get(req.params.session)
   if (!entry)
     return res.status(404).json({ error: 'Session not found or expired.' })
+
+  // Lockdown check: if the server is locked, only allow listed Discord IDs.
+  if (config.serverLocked) {
+    const allowed = config.serverLockedAllowList
+    if (!allowed.includes(entry.discordId)) {
+      return res.status(403).json({ error: 'serverLocked' })
+    }
+  }
 
   res.json({
     user: {

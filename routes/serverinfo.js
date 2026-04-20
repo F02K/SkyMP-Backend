@@ -13,6 +13,8 @@ router.get('/', (_req, res) => {
     // Needed by the launcher to write correct skymp5-client-settings.txt
     masterKey:           config.serverMasterKey  || null,
     masterUrl:           config.masterUrl         || null,
+    // Lockdown state — launcher uses this to show an indicator and block Play
+    locked:              config.serverLocked,
   })
 })
 
