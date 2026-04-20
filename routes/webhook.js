@@ -27,9 +27,17 @@ const crypto  = require('crypto')
 const path    = require('path')
 const { execFile } = require('child_process')
 const express = require('express')
+const rateLimit = require('express-rate-limit')
 const { mergeSourcesIntoRoot } = require('../scripts/merge-files')
 
 const router = express.Router()
+
+const githubWebhookLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false
+})
 
 const CLIENT_DIR   = path.join(__dirname, '..', 'sources', 'client')
 const DEFAULT_BRANCH = process.env.CLIENT_BRANCH || 'refs/heads/main'
@@ -91,7 +99,7 @@ function pullAndMerge() {
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
-router.post('/github', (req, res) => {
+router.post('/github', githubWebhookLimiter, (req, res) => {
   const secret = process.env.GITHUB_WEBHOOK_SECRET
 
   // Secret must be configured — reject silently otherwise
