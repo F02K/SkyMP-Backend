@@ -1,6 +1,6 @@
 const router      = require('express').Router()
 const config      = require('../config')
-const { lookupSession } = require('./master-api')
+const { lookupSession, loadWhitelist } = require('./master-api')
 const { getHeartbeat }  = require('./servers')
 const fs          = require('fs')
 const path        = require('path')
@@ -25,9 +25,12 @@ router.get('/', (req, res) => {
       allowed      = false
     } else {
       sessionValid = true
-      allowed      = config.serverLocked
-        ? config.serverLockedAllowList.includes(entry.discordId)
-        : true
+      if (config.serverLocked) {
+        allowed = config.serverLockedAllowList.includes(entry.discordId)
+      } else {
+        const whitelist = loadWhitelist()
+        allowed = whitelist.length === 0 || whitelist.includes(entry.discordId)
+      }
     }
   }
 

@@ -27,6 +27,11 @@
  *     Called by the game server (with X-Auth-Token) to spend a player's coins.
  *     Body:    { balanceToSpend: number }
  *     Returns: { balanceSpent: number, success: boolean }
+ *
+ *   GET /api/servers/:key/profiles/:profileId/check
+ *     Called by the game server in offline mode to verify a profileId is allowed.
+ *     Applies the same lock / whitelist rules as session validation.
+ *     Returns: { allowed: true }  or  403/404 with { error }
  */
 
 const router = require('express').Router()
@@ -57,6 +62,12 @@ function getOrCreateProfileId(discordId) {
   return data.map[discordId]
 }
 
+function getDiscordIdByProfileId(profileId) {
+  const data = loadProfiles()
+  const entry = Object.entries(data.map).find(([, id]) => id === profileId)
+  return entry ? entry[0] : null
+}
+
 // ── Persistent balance store — profileId → coin balance ──────────────────────
 
 const BALANCES_PATH = path.join(__dirname, '..', 'data', 'balances.json')
@@ -80,6 +91,15 @@ function setBalance(profileId, balance) {
   const data = loadBalances()
   data[profileId] = balance
   saveBalances(data)
+}
+
+// ── Persistent whitelist — Discord IDs allowed when server is unlocked ────────
+
+const WHITELIST_PATH = path.join(__dirname, '..', 'data', 'whitelist.json')
+
+function loadWhitelist() {
+  try { return JSON.parse(fs.readFileSync(WHITELIST_PATH, 'utf8')) }
+  catch { return [] }
 }
 
 // ── In-memory session store — used for online-mode validation only ────────────
@@ -166,6 +186,10 @@ router.get('/:key/sessions/:session', (req, res) => {
   if (config.serverLocked) {
     if (!config.serverLockedAllowList.includes(entry.discordId))
       return res.status(403).json({ error: 'serverLocked' })
+  } else {
+    const whitelist = loadWhitelist()
+    if (whitelist.length > 0 && !whitelist.includes(entry.discordId))
+      return res.status(403).json({ error: 'notWhitelisted' })
   }
 
   res.json({
@@ -175,6 +199,32 @@ router.get('/:key/sessions/:session', (req, res) => {
       username:  entry.username,
     },
   })
+})
+
+// ── GET /api/servers/:key/profiles/:profileId/check ──────────────────────────
+// Used by the game server in offline mode to verify a profileId is allowed.
+
+router.get('/:key/profiles/:profileId/check', (req, res) => {
+  if (!checkKey(req, res)) return
+
+  const profileId = parseInt(req.params.profileId, 10)
+  if (isNaN(profileId))
+    return res.status(400).json({ error: 'Invalid profileId.' })
+
+  const discordId = getDiscordIdByProfileId(profileId)
+  if (!discordId)
+    return res.status(404).json({ error: 'profileNotFound' })
+
+  if (config.serverLocked) {
+    if (!config.serverLockedAllowList.includes(discordId))
+      return res.status(403).json({ error: 'serverLocked' })
+  } else {
+    const whitelist = loadWhitelist()
+    if (whitelist.length > 0 && !whitelist.includes(discordId))
+      return res.status(403).json({ error: 'notWhitelisted' })
+  }
+
+  res.json({ allowed: true })
 })
 
 // ── GET /api/servers/:key/sessions/:session/balance ───────────────────────────
@@ -219,3 +269,4 @@ router.post('/:key/sessions/:session/purchase', (req, res) => {
 
 module.exports = router
 module.exports.lookupSession = lookupSession
+module.exports.loadWhitelist = loadWhitelist
