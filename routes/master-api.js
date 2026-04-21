@@ -54,14 +54,34 @@ function getOrCreateProfileId(discordId) {
 
 // ── In-memory session store — used for online-mode validation only ────────────
 
-const sessions    = new Map()
-const SESSION_TTL = 24 * 60 * 60 * 1000  // 24 h
+const sessions      = new Map()
+const SESSION_TTL   = 24 * 60 * 60 * 1000  // 24 h
+const SESSIONS_PATH = path.join(__dirname, '..', 'data', 'sessions.json')
 
 function pruneExpired() {
   const now = Date.now()
   for (const [token, s] of sessions)
     if (s.expiresAt < now) sessions.delete(token)
 }
+
+function saveSessions() {
+  const now     = Date.now()
+  const entries = [...sessions.entries()].filter(([, s]) => s.expiresAt > now)
+  try { fs.writeFileSync(SESSIONS_PATH, JSON.stringify(entries, null, 2) + '\n') }
+  catch (e) { console.error('Failed to persist sessions:', e) }
+}
+
+function loadSessions() {
+  try {
+    const entries = JSON.parse(fs.readFileSync(SESSIONS_PATH, 'utf8'))
+    const now     = Date.now()
+    for (const [token, s] of entries)
+      if (s.expiresAt > now) sessions.set(token, s)
+    console.log(`Loaded ${sessions.size} active session(s) from disk`)
+  } catch { /* first run or file absent — start fresh */ }
+}
+
+loadSessions()
 
 // ── POST /auth/session ────────────────────────────────────────────────────────
 
@@ -83,6 +103,7 @@ router.post('/session', (req, res) => {
     username:  discordUser.username || '',
     expiresAt: Date.now() + SESSION_TTL,
   })
+  saveSessions()
 
   res.json({ profileId, session: token })
 })
