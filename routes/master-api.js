@@ -111,7 +111,7 @@ router.post('/session', (req, res) => {
 // ── GET /api/servers/:key/sessions/:session ───────────────────────────────────
 // SkyMP server calls this in online mode to validate a client's session token.
 
-router.get('/servers/:key/sessions/:session', (req, res) => {
+router.get('/:key/sessions/:session', (req, res) => {
   pruneExpired()
   const entry = sessions.get(req.params.session)
   if (!entry)

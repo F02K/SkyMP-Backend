@@ -1,6 +1,7 @@
 const router      = require('express').Router()
 const config      = require('../config')
 const { lookupSession } = require('./master-api')
+const { getHeartbeat }  = require('./servers')
 
 router.get('/', (req, res) => {
   const token = req.headers['x-session']
@@ -21,9 +22,11 @@ router.get('/', (req, res) => {
     }
   }
 
+  const hb = getHeartbeat()
+
   res.json({
-    name:                config.serverName,
-    maxPlayers:          config.serverMaxPlayers,
+    name:                hb?.name       ?? config.serverName,
+    maxPlayers:          hb?.maxPlayers ?? config.serverMaxPlayers,
     port:                config.skyrimServerPort,
     offlineMode:         config.serverOfflineMode,
     npcEnabled:          config.serverNpcEnabled,
