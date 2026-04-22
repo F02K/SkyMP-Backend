@@ -57,8 +57,9 @@ app.use('/auth/dashboard',    dashAuthRoute)
 
 // GET /auth/callback — Discord's registered redirect URI.
 // Forwards the code back to the launcher's local server when the request
-// came from the launcher, otherwise returns a plain confirmation page.
-app.get('/auth/callback', (req, res) => {
+// came from the launcher. For in-game clients (no redirect), exchanges the
+// code and stores the session so the client can poll /auth/discord/status.
+app.get('/auth/callback', async (req, res) => {
   const { code, state } = req.query
   const launcherRedirect = discordRoute.pendingAuth.get(state)
   discordRoute.pendingAuth.delete(state)
@@ -75,6 +76,13 @@ app.get('/auth/callback', (req, res) => {
     } catch {
       return res.status(400).send('Invalid launcher redirect URL.')
     }
+  }
+
+  // In-game client flow: complete the OAuth exchange and store session for polling
+  try {
+    await discordRoute.handleInGameCallback(code, state)
+  } catch (err) {
+    console.error('In-game auth callback error:', err)
   }
 
   res.send('Authorised. You can close this tab.')

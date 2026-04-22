@@ -19,6 +19,50 @@ router.get('/', (_req, res) => {
   ])
 })
 
+// Called by the SkyMP in-game client to get the game server's host/port.
+// The client sends X-Session so we also return sessionValid/allowed for UI hints,
+// but the required fields are just host and port.
+router.get('/:key/serverinfo', (req, res) => {
+  if (req.params.key !== config.serverMasterKey) {
+    return res.status(403).json({ error: 'Invalid master key.' })
+  }
+
+  // Optional session validation for the allowed/sessionValid hints
+  const { lookupSession, loadWhitelist } = require('./master-api')
+  const token = req.headers['x-session']
+  let sessionValid = false
+  let allowed      = true
+
+  if (token) {
+    const entry = lookupSession(token)
+    if (!entry) {
+      sessionValid = false
+      allowed      = false
+    } else {
+      sessionValid = true
+      if (config.serverLocked) {
+        allowed = config.serverLockedAllowList.includes(entry.discordId)
+      } else {
+        const whitelist = loadWhitelist()
+        allowed = whitelist.length === 0 || whitelist.includes(entry.discordId)
+      }
+    }
+  }
+
+  res.json({
+    host:        config.skyrimServerHost,
+    port:        config.skyrimServerPort,
+    name:        heartbeat?.name       ?? config.serverName,
+    maxPlayers:  heartbeat?.maxPlayers ?? config.serverMaxPlayers,
+    offlineMode: config.serverOfflineMode,
+    masterKey:   config.serverMasterKey || null,
+    masterUrl:   config.masterUrl       || null,
+    locked:      config.serverLocked,
+    sessionValid,
+    allowed,
+  })
+})
+
 // Called by the SkyMP client to fetch the server's mod list.
 // Returns a v1 SkyMP server manifest so the client doesn't loop on 404s.
 router.get('/:key/manifest.json', (req, res) => {

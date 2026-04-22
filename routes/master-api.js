@@ -150,17 +150,11 @@ function checkKey(req, res) {
   return true
 }
 
-// ── POST /auth/session ────────────────────────────────────────────────────────
+// ── Session creation helper (used by POST /auth/session and discord-auth callback) ─
 
-router.post('/session', (req, res) => {
-  const { discordUser } = req.body || {}
-  if (!discordUser || !discordUser.id)
-    return res.status(400).json({ error: 'Missing discordUser.id' })
-
+function createSession(discordUser) {
   pruneExpired()
-
   const profileId = getOrCreateProfileId(discordUser.id)
-
   const token = crypto.randomBytes(32).toString('hex')
   sessions.set(token, {
     profileId,
@@ -169,8 +163,18 @@ router.post('/session', (req, res) => {
     expiresAt: Date.now() + SESSION_TTL,
   })
   saveSessions()
+  return { profileId, session: token }
+}
 
-  res.json({ profileId, session: token })
+// ── POST /auth/session ────────────────────────────────────────────────────────
+
+router.post('/session', (req, res) => {
+  const { discordUser } = req.body || {}
+  if (!discordUser || !discordUser.id)
+    return res.status(400).json({ error: 'Missing discordUser.id' })
+
+  const result = createSession(discordUser)
+  res.json(result)
 })
 
 // ── GET /api/servers/:key/sessions/:session ───────────────────────────────────
@@ -268,5 +272,6 @@ router.post('/:key/sessions/:session/purchase', (req, res) => {
 })
 
 module.exports = router
-module.exports.lookupSession = lookupSession
-module.exports.loadWhitelist = loadWhitelist
+module.exports.lookupSession  = lookupSession
+module.exports.loadWhitelist  = loadWhitelist
+module.exports.createSession  = createSession
