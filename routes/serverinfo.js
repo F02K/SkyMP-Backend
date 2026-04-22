@@ -47,7 +47,7 @@ router.get('/', (req, res) => {
     masterKey:           config.serverMasterKey  || null,
     masterUrl:           config.masterUrl         || null,
     locked:              config.serverLocked,
-    lockedAllowList:     config.serverLockedAllowList,
+    // lockedAllowList intentionally omitted — never expose the allow-list to clients.
     // Session-aware fields — only meaningful when X-Session header is present
     sessionValid,
     allowed,
