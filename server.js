@@ -3,6 +3,10 @@ require('dotenv').config()
 // Start WS relay alongside Express (independent port, see WS_PORT in .env)
 require('./sources/wsRelay')
 
+// Start Discord bot for role-based access checks
+const discordBot = require('./sources/discordBot')
+discordBot.start()
+
 const express  = require('express')
 const cors     = require('cors')
 const path     = require('path')
@@ -18,9 +22,13 @@ const filesRoute       = require('./routes/files')
 const modlistRoute     = require('./routes/modlist')
 const serversRoute     = require('./routes/servers')
 const webhookRoute     = require('./routes/webhook')
-const adminRoute       = require('./routes/admin')
-const dashAuthRoute    = require('./routes/dashboard-auth')
-const skympCompatRoute = require('./routes/skymp-compat')
+const adminRoute           = require('./routes/admin')
+const dashAuthRoute        = require('./routes/dashboard-auth')
+const skympCompatRoute     = require('./routes/skymp-compat')
+const loreRoute            = require('./routes/lore')
+const rulesRoute           = require('./routes/rules')
+const whitelistRoute       = require('./routes/whitelist')
+const whitelistNotesRoute  = require('./routes/whitelist-notes')
 
 const app  = express()
 const PORT = process.env.PORT || 4000
@@ -53,9 +61,13 @@ app.use('/api/servers',    serversRoute)
 app.use('/api/users',      skympCompatRoute)
 app.use('/auth',           masterApiRoute)   // POST /auth/session
 app.use('/api/servers',    masterApiRoute)   // GET  /api/servers/:key/sessions/:session
-app.use('/webhooks',       webhookRoute)
-app.use('/api/admin',      adminRoute)
-app.use('/auth/dashboard', dashAuthRoute)
+app.use('/webhooks',            webhookRoute)
+app.use('/api/admin',           adminRoute)
+app.use('/auth/dashboard',      dashAuthRoute)
+app.use('/api/lore',            loreRoute)
+app.use('/api/rules',           rulesRoute)
+app.use('/api/whitelist',       whitelistRoute)
+app.use('/api/whitelist-notes', whitelistNotesRoute)
 
 app.listen(PORT, () => {
   console.log(`Frostfall backend running on http://localhost:${PORT}`)

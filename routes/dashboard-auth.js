@@ -6,11 +6,13 @@
 // Required Discord app settings:
 //   Redirects: add DISCORD_DASHBOARD_REDIRECT_URI (e.g. https://api.frostfall.online/auth/dashboard/callback)
 
-const { Router } = require('express')
-const https      = require('https')
-const crypto     = require('crypto')
-const config     = require('../config')
-const sessions   = require('../sources/dashboardSessions')
+const { Router }              = require('express')
+const https                   = require('https')
+const crypto                  = require('crypto')
+const config                  = require('../config')
+const sessions                = require('../sources/dashboardSessions')
+const discordBot              = require('../sources/discordBot')
+const { resolvePermissions }  = require('../sources/permissions')
 
 const router  = Router()
 
@@ -24,9 +26,6 @@ const pending = new Map()
 router.get('/url', (req, res) => {
   if (!config.discordClientId) {
     return res.status(503).json({ error: 'Discord not configured on this server.' })
-  }
-  if (!config.dashboardDiscordIds.length) {
-    return res.status(503).json({ error: 'No dashboard users configured (DASHBOARD_DISCORD_IDS is empty).' })
   }
 
   const state       = crypto.randomBytes(16).toString('hex')
@@ -70,10 +69,16 @@ router.get('/callback', async (req, res) => {
   pending.delete(state)
 
   try {
-    const tokenData = await _tokenExchange(code)
-    const user      = await _getUser(tokenData.access_token)
+    const tokenData   = await _tokenExchange(code)
+    const user        = await _getUser(tokenData.access_token)
 
-    if (!config.dashboardDiscordIds.includes(user.id)) {
+    const roleIds     = await discordBot.getMemberRoles(user.id)
+    const permissions = resolvePermissions(roleIds)
+
+    // Allow access if the user has at least one recognised role-based permission,
+    // or if they're in the legacy DASHBOARD_DISCORD_IDS allowlist.
+    const isAllowed = permissions.length > 0 || config.dashboardDiscordIds.includes(user.id)
+    if (!isAllowed) {
       return res.redirect(pend.redirectUrl + '?error=unauthorized')
     }
 
@@ -82,7 +87,7 @@ router.get('/callback', async (req, res) => {
       ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`
       : null
 
-    const token = sessions.create(user.id, username, avatar)
+    const token = sessions.create(user.id, username, avatar, roleIds, permissions)
     return res.redirect(`${pend.redirectUrl}?token=${token}`)
 
   } catch (err) {

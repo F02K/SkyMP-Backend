@@ -1,6 +1,6 @@
 const router      = require('express').Router()
 const config      = require('../config')
-const { lookupSession, loadWhitelist } = require('./master-api')
+const { lookupSession, isDiscordWhitelisted } = require('./master-api')
 const { getHeartbeat }  = require('./servers')
 const fs          = require('fs')
 const path        = require('path')
@@ -12,7 +12,7 @@ function loadPublicKeys() {
   catch { return null }
 }
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const token = req.headers['x-session']
 
   let sessionValid = false
@@ -28,8 +28,11 @@ router.get('/', (req, res) => {
       if (config.serverLocked) {
         allowed = config.serverLockedAllowList.includes(entry.discordId)
       } else {
-        const whitelist = loadWhitelist()
-        allowed = whitelist.length === 0 || whitelist.includes(entry.discordId)
+        try {
+          allowed = await isDiscordWhitelisted(entry.discordId)
+        } catch {
+          allowed = false
+        }
       }
     }
   }

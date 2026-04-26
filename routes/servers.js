@@ -22,13 +22,13 @@ router.get('/', (_req, res) => {
 // Called by the SkyMP in-game client to get the game server's host/port.
 // The client sends X-Session so we also return sessionValid/allowed for UI hints,
 // but the required fields are just host and port.
-router.get('/:key/serverinfo', (req, res) => {
+router.get('/:key/serverinfo', async (req, res) => {
   if (req.params.key !== config.serverMasterKey) {
     return res.status(403).json({ error: 'Invalid master key.' })
   }
 
   // Optional session validation for the allowed/sessionValid hints
-  const { lookupSession, loadWhitelist } = require('./master-api')
+  const { lookupSession, isDiscordWhitelisted } = require('./master-api')
   const token = req.headers['x-session']
   let sessionValid = false
   let allowed      = true
@@ -43,8 +43,11 @@ router.get('/:key/serverinfo', (req, res) => {
       if (config.serverLocked) {
         allowed = config.serverLockedAllowList.includes(entry.discordId)
       } else {
-        const whitelist = loadWhitelist()
-        allowed = whitelist.length === 0 || whitelist.includes(entry.discordId)
+        try {
+          allowed = await isDiscordWhitelisted(entry.discordId)
+        } catch {
+          allowed = false
+        }
       }
     }
   }

@@ -39,6 +39,7 @@ const crypto = require('crypto')
 const fs     = require('fs')
 const path   = require('path')
 const config = require('../config')
+const discordBot = require('../sources/discordBot')
 
 // ── Persistent Discord → profileId mapping ────────────────────────────────────
 
@@ -100,6 +101,15 @@ const WHITELIST_PATH = path.join(__dirname, '..', 'data', 'whitelist.json')
 function loadWhitelist() {
   try { return JSON.parse(fs.readFileSync(WHITELIST_PATH, 'utf8')) }
   catch { return [] }
+}
+
+async function isDiscordWhitelisted(discordId) {
+  if (config.whitelistRoleId) {
+    return discordBot.memberHasRole(discordId, config.whitelistRoleId)
+  }
+
+  const whitelist = loadWhitelist()
+  return whitelist.length === 0 || whitelist.includes(discordId)
 }
 
 // ── In-memory session store — used for online-mode validation only ────────────
@@ -179,7 +189,7 @@ router.post('/session', (req, res) => {
 
 // ── GET /api/servers/:key/sessions/:session ───────────────────────────────────
 
-router.get('/:key/sessions/:session', (req, res) => {
+router.get('/:key/sessions/:session', async (req, res) => {
   if (!checkKey(req, res)) return
 
   pruneExpired()
@@ -191,9 +201,13 @@ router.get('/:key/sessions/:session', (req, res) => {
     if (!config.serverLockedAllowList.includes(entry.discordId))
       return res.status(403).json({ error: 'serverLocked' })
   } else {
-    const whitelist = loadWhitelist()
-    if (whitelist.length > 0 && !whitelist.includes(entry.discordId))
-      return res.status(403).json({ error: 'notWhitelisted' })
+    try {
+      if (!await isDiscordWhitelisted(entry.discordId))
+        return res.status(403).json({ error: 'notWhitelisted' })
+    } catch (err) {
+      console.error('[master-api] whitelist role check failed:', err.message)
+      return res.status(503).json({ error: 'whitelistUnavailable' })
+    }
   }
 
   res.json({
@@ -208,7 +222,7 @@ router.get('/:key/sessions/:session', (req, res) => {
 // ── GET /api/servers/:key/profiles/:profileId/check ──────────────────────────
 // Used by the game server in offline mode to verify a profileId is allowed.
 
-router.get('/:key/profiles/:profileId/check', (req, res) => {
+router.get('/:key/profiles/:profileId/check', async (req, res) => {
   if (!checkKey(req, res)) return
 
   const profileId = parseInt(req.params.profileId, 10)
@@ -223,9 +237,13 @@ router.get('/:key/profiles/:profileId/check', (req, res) => {
     if (!config.serverLockedAllowList.includes(discordId))
       return res.status(403).json({ error: 'serverLocked' })
   } else {
-    const whitelist = loadWhitelist()
-    if (whitelist.length > 0 && !whitelist.includes(discordId))
-      return res.status(403).json({ error: 'notWhitelisted' })
+    try {
+      if (!await isDiscordWhitelisted(discordId))
+        return res.status(403).json({ error: 'notWhitelisted' })
+    } catch (err) {
+      console.error('[master-api] offline whitelist role check failed:', err.message)
+      return res.status(503).json({ error: 'whitelistUnavailable' })
+    }
   }
 
   res.json({ allowed: true })
@@ -274,4 +292,5 @@ router.post('/:key/sessions/:session/purchase', (req, res) => {
 module.exports = router
 module.exports.lookupSession  = lookupSession
 module.exports.loadWhitelist  = loadWhitelist
+module.exports.isDiscordWhitelisted = isDiscordWhitelisted
 module.exports.createSession  = createSession

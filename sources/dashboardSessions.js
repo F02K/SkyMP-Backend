@@ -34,13 +34,13 @@ function _save() {
   }
 }
 
-function create(discordId, username, avatar) {
+function create(discordId, username, avatar, roles = [], permissions = []) {
   // Prune expired first
   const now = Date.now()
   for (const [t, d] of sessions) if (d.expiresAt <= now) sessions.delete(t)
 
   const token = crypto.randomBytes(32).toString('hex')
-  sessions.set(token, { discordId, username, avatar, expiresAt: now + TTL })
+  sessions.set(token, { discordId, username, avatar, roles, permissions, expiresAt: now + TTL })
   _save()
   return token
 }

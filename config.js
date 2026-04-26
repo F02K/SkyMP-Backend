@@ -51,6 +51,12 @@ module.exports = {
   // Public URL of the website (used to redirect back after OAuth).
   websiteUrl: process.env.WEBSITE_URL || 'http://localhost:4001',
 
+  // ── Discord bot (role-based access) ────────────────────────────────────────
+  // Bot token and guild ID used to fetch member roles at login time.
+  // The bot must have the "Server Members Intent" enabled in the Developer Portal.
+  discordBotToken: process.env.DISCORD_BOT_TOKEN || '',
+  discordGuildId:  process.env.DISCORD_GUILD_ID  || '',
+
   // ── Server lockdown ─────────────────────────────────────────────────────────
   // When true, only Discord users whose IDs appear in serverLockedAllowList
   // can connect.  Everyone else receives loginFailedServerLocked from the TS
@@ -59,4 +65,8 @@ module.exports = {
   // Comma-separated list of Discord snowflake IDs that may still connect.
   serverLockedAllowList: (process.env.SERVER_LOCKED_ALLOW || '')
     .split(',').map(s => s.trim()).filter(Boolean),
+
+  // Discord role used as the gameplay whitelist. When set, this replaces
+  // data/whitelist.json as the source of truth for who may join.
+  whitelistRoleId: process.env.WHITELIST_ROLE_ID || '',
 }

@@ -1,0 +1,16 @@
+{
+  "roles": {
+    "1494340623531118702": {
+      "name": "Management",
+      "permissions": ["admin.*", "lore.write", "rules.write", "staff.whitelist_info"]
+    },
+    "1494298915120611328": {
+      "name": "Lore Master",
+      "permissions": ["lore.write", "staff.whitelist_info"]
+    },
+    "1494298916563193887": {
+      "name": "Support Staff",
+      "permissions": ["staff.whitelist_info"]
+    }
+  }
+}
