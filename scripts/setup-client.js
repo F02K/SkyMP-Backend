@@ -1,10 +1,10 @@
 'use strict'
 
 /**
- * One-time (and subsequent) setup for the Frostfall-Client source directory.
+ * One-time (and subsequent) setup for the configured client source directory.
  *
- *   First run  → git clone  https://github.com/F02K/Frostfall-Client.git  sources/client/
- *   Later runs → git pull --ff-only  (fast-forward only, refuse dirty merges)
+ *   First run: clone the configured repository into the source directory.
+ *   Later runs: pull fast-forward-only updates.
  *
  * After the clone / pull the merge pipeline runs automatically so that
  * public/files/root/ is immediately up to date.
@@ -14,11 +14,17 @@
  */
 
 const { execFileSync } = require('child_process')
-const path = require('path')
 const fs   = require('fs')
+const path = require('path')
+const config = require('../src/config')
 
-const CLIENT_REPO = 'https://github.com/F02K/Frostfall-Client.git'
-const CLIENT_DIR  = path.join(__dirname, '..', 'sources', 'client')
+const CLIENT_REPO = config.distribution.clientRepositoryUrl
+const CLIENT_DIR = config.distribution.clientSourceDir
+
+if (!CLIENT_REPO) {
+  console.error('[setup] Configure distribution.clientRepositoryUrl or CLIENT_REPOSITORY_URL first.')
+  process.exit(1)
+}
 
 // ── Clone or pull ─────────────────────────────────────────────────────────────
 
@@ -36,7 +42,7 @@ if (isCloned) {
     process.exit(1)
   }
 } else {
-  console.log('[setup] Cloning Frostfall-Client repo…')
+  console.log('[setup] Cloning configured client repository…')
   console.log('[setup]   →', CLIENT_DIR)
   try {
     execFileSync('git', ['clone', CLIENT_REPO, CLIENT_DIR], { stdio: 'inherit' })

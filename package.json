@@ -1,14 +1,26 @@
 {
-  "name": "frostfall-backend",
-  "version": "1.0.0",
-  "description": "Frostfall launcher backend API — serves news, server status, and client setup files",
-  "main": "server.js",
+  "name": "skymp-backend",
+  "version": "2.0.0",
+  "description": "General-purpose backend template for SkyMP launchers and multiplayer servers",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "setup": "node scripts/setup-client.js",
-    "merge": "node scripts/merge-files.js",
-    "populate": "node scripts/populate-files.js"
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test",
+    "config:check": "node scripts/validate-config.js",
+    "migrate:data": "node scripts/migrate-data.js",
+    "data:migrate": "npm run migrate:data --",
+    "client:setup": "node scripts/setup-client.js",
+    "client:build": "node scripts/merge-files.js",
+    "client:populate": "node scripts/populate-files.js",
+    "launcher:publish": "node scripts/publish-launcher-update.js",
+    "setup": "npm run client:setup",
+    "merge": "npm run client:build",
+    "populate": "npm run client:populate",
+    "publish-launcher": "npm run launcher:publish"
   },
   "dependencies": {
     "archiver": "^5.3.2",
@@ -17,6 +29,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.0",
     "express-rate-limit": "^8.3.2",
-    "ws": "^8.20.0"
+    "ws": "^8.20.0",
+    "yaml": "^2.9.0"
   }
 }

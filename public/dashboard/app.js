@@ -1,6 +1,10 @@
-const config = window.FROSTFALL_DASHBOARD_CONFIG || {}
+const config = window.SKYMP_DASHBOARD_CONFIG || {}
 const apiBaseUrl = (config.apiBaseUrl || '').replace(/\/$/, '')
-const tokenKey = 'frostfall.dashboard.token'
+const tokenKey = 'skymp.dashboard.token'
+
+document.title = `${config.projectName || 'SkyMP'} Management`
+document.querySelector('[data-project-name]').textContent = config.projectName || 'SkyMP'
+document.querySelector('[data-project-mark]').textContent = (config.projectName || 'S').trim().charAt(0).toUpperCase()
 
 const state = {
   token: localStorage.getItem(tokenKey) || '',
@@ -108,7 +112,7 @@ async function api(path, options = {}) {
   const text = await res.text()
   const data = text ? JSON.parse(text) : null
   if (!res.ok) {
-    throw new Error(data?.error || `Request failed with ${res.status}`)
+    throw new Error(data?.error?.message || data?.error || `Request failed with ${res.status}`)
   }
   return data
 }
@@ -126,15 +130,15 @@ function captureTokenFromUrl() {
 
 async function login() {
   const redirect = `${window.location.origin}/`
-  const data = await fetch(`${apiBaseUrl}/auth/dashboard/url?redirect=${encodeURIComponent(redirect)}`)
+  const data = await fetch(`${apiBaseUrl}/api/v2/admin/auth/start?redirect=${encodeURIComponent(redirect)}`)
     .then(res => res.json())
-  if (!data.url) throw new Error(data.error || 'OAuth URL unavailable')
+  if (!data.url) throw new Error(data?.error?.message || data?.error || 'OAuth URL unavailable')
   window.location.href = data.url
 }
 
 async function logout() {
   try {
-    if (state.token) await api('/auth/dashboard/logout', { method: 'POST' })
+    if (state.token) await api('/api/v2/admin/auth/logout', { method: 'POST' })
   } catch {
     // Local logout still matters even if the session already expired.
   }
@@ -146,27 +150,27 @@ async function logout() {
 
 async function loadSession() {
   if (!state.token) return
-  const data = await api('/auth/dashboard/me')
+  const data = await api('/api/v2/admin/auth/session')
   state.user = data.user
 }
 
 async function loadFactions() {
-  const data = await api('/api/faction-whitelist')
+  const data = await api('/api/v2/admin/faction-assignments')
   state.requirements = data.requirements || []
-  state.assignments = data.assignments || []
+  state.assignments = data.items || []
 }
 
 async function loadPlayers() {
-  const data = await api('/api/players')
-  state.players = data.players || []
+  const data = await api('/api/v2/admin/players')
+  state.players = data.items || []
 }
 
 async function loadAccess() {
-  state.access = await api('/api/server-access')
+  state.access = await api('/api/v2/admin/access-policy')
 }
 
 async function loadPermissions() {
-  const data = await api('/api/role-permissions')
+  const data = await api('/api/v2/admin/role-permissions')
   state.roles = data.roles || {}
   state.knownPermissions = data.knownPermissions || []
 }
@@ -500,7 +504,7 @@ function lines(value) {
 
 async function saveAccess(event) {
   event.preventDefault()
-  state.access = await api('/api/server-access', {
+  state.access = await api('/api/v2/admin/access-policy', {
     method: 'PUT',
     body: JSON.stringify({
       serverLocked: nodes.serverLockedInput.checked,
@@ -517,7 +521,7 @@ async function saveAccess(event) {
 async function checkAccess(event) {
   event.preventDefault()
   const discordId = nodes.accessCheckDiscordId.value.trim()
-  const result = await api(`/api/server-access/check/${encodeURIComponent(discordId)}`)
+  const result = await api(`/api/v2/admin/access-checks/${encodeURIComponent(discordId)}`)
   nodes.accessCheckResult.textContent = result.allowed
     ? `Allowed (${result.roles.length} role${result.roles.length === 1 ? '' : 's'})`
     : `Blocked: ${result.error || 'accessDenied'}`
@@ -533,8 +537,8 @@ async function savePlayer(event) {
     notes: nodes.playerNotesInput.value,
   }
   const saved = player
-    ? await api(`/api/players/${player.profileId}`, { method: 'PUT', body: JSON.stringify(body) })
-    : await api('/api/players', { method: 'POST', body: JSON.stringify(body) })
+    ? await api(`/api/v2/admin/players/${player.profileId}`, { method: 'PUT', body: JSON.stringify(body) })
+    : await api('/api/v2/admin/players', { method: 'POST', body: JSON.stringify(body) })
   state.selectedProfileId = saved.profileId
   await refreshPlayers()
   toast('Player saved')
@@ -544,7 +548,7 @@ async function toggleWhitelist() {
   const player = selectedPlayer()
   if (!player) return
   const enabled = !player.access?.roles?.includes(state.access?.whitelistRoleId)
-  await api(`/api/players/${player.profileId}/whitelist`, {
+  await api(`/api/v2/admin/players/${player.profileId}/whitelist`, {
     method: 'PUT',
     body: JSON.stringify({ enabled }),
   })
@@ -556,7 +560,7 @@ async function toggleBan() {
   const player = selectedPlayer()
   if (!player) return
   const enabled = !player.access?.roles?.includes(state.access?.bannedRoleId)
-  await api(`/api/players/${player.profileId}/ban`, {
+  await api(`/api/v2/admin/players/${player.profileId}/ban`, {
     method: 'PUT',
     body: JSON.stringify({ enabled }),
   })
@@ -568,7 +572,7 @@ async function assignSelectedPlayerFaction(event) {
   event.preventDefault()
   const player = selectedPlayer()
   if (!player) return
-  await api(`/api/players/${player.profileId}/factions`, {
+  await api(`/api/v2/admin/players/${player.profileId}/factions`, {
     method: 'POST',
     body: JSON.stringify({
       requirementId: nodes.playerRequirementSelect.value,
@@ -591,7 +595,7 @@ async function saveAssignment(event) {
     playerName: nodes.playerNameInput.value,
     notes: nodes.notesInput.value,
   }
-  await api('/api/faction-whitelist/assignments', {
+  await api('/api/v2/admin/faction-assignments', {
     method: 'POST',
     body: JSON.stringify(body),
   })
@@ -604,7 +608,7 @@ async function saveAssignment(event) {
 async function saveRole(event) {
   event.preventDefault()
   const permissions = [...nodes.permissionChecks.querySelectorAll('input:checked')].map(input => input.value)
-  await api(`/api/role-permissions/${encodeURIComponent(nodes.roleIdInput.value)}`, {
+  await api(`/api/v2/admin/role-permissions/${encodeURIComponent(nodes.roleIdInput.value)}`, {
     method: 'PUT',
     body: JSON.stringify({
       name: nodes.roleNameInput.value,
@@ -666,7 +670,7 @@ function bindEvents() {
 
     const deleteAssignment = event.target.closest('[data-delete-assignment]')
     if (deleteAssignment) {
-      api(`/api/faction-whitelist/assignments/${encodeURIComponent(deleteAssignment.dataset.deleteAssignment)}`, {
+      api(`/api/v2/admin/faction-assignments/${encodeURIComponent(deleteAssignment.dataset.deleteAssignment)}`, {
         method: 'DELETE',
       })
         .then(loadFactions)
@@ -681,7 +685,7 @@ function bindEvents() {
     if (deletePlayerAssignment) {
       const player = selectedPlayer()
       if (!player) return
-      api(`/api/players/${player.profileId}/factions/${encodeURIComponent(deletePlayerAssignment.dataset.deletePlayerAssignment)}`, {
+      api(`/api/v2/admin/players/${player.profileId}/factions/${encodeURIComponent(deletePlayerAssignment.dataset.deletePlayerAssignment)}`, {
         method: 'DELETE',
       })
         .then(loadFactions)
@@ -705,7 +709,7 @@ function bindEvents() {
 
     const deleteRole = event.target.closest('[data-delete-role]')
     if (deleteRole) {
-      api(`/api/role-permissions/${encodeURIComponent(deleteRole.dataset.deleteRole)}`, { method: 'DELETE' })
+      api(`/api/v2/admin/role-permissions/${encodeURIComponent(deleteRole.dataset.deleteRole)}`, { method: 'DELETE' })
         .then(loadPermissions)
         .then(renderRoles)
         .then(() => toast('Role removed'))

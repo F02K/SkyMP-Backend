@@ -4,27 +4,27 @@
  * Merge pipeline — copies the client source directory into the file bucket
  * that the launcher downloads, and builds the distributable zip.
  *
- *   sources/client/  →  public/files/root/
- *                    →  public/files/frostfall-client.zip
- *                    →  data/files-version.json
+ *   configured client source → distribution root
+ *                            → configured client archive
+ *                            → distribution/client-version.json
  *
  * SKSE is NOT included here — it is managed by the user via the Vortex collection.
  *
  * Run standalone:  node scripts/merge-files.js
- * Called by:       scripts/setup-client.js  and  routes/webhook.js
+ * Called by:       scripts/setup-client.js and the GitHub webhook service
  */
 
 const path               = require('path')
 const fs                 = require('fs')
 const { execFileSync }   = require('child_process')
 const archiver           = require('archiver')
+const config             = require('../src/config')
+const { canonicalDataFile } = require('../src/shared/storage/paths')
 
-const ROOT = path.join(__dirname, '..')
-
-const CLIENT_SRC   = path.join(ROOT, 'sources', 'client')
-const OUTPUT_DIR   = path.join(ROOT, 'public', 'files', 'root')
-const ZIP_PATH     = path.join(ROOT, 'public', 'files', 'frostfall-client.zip')
-const VERSION_FILE = path.join(ROOT, 'data', 'files-version.json')
+const CLIENT_SRC = config.distribution.clientSourceDir
+const OUTPUT_DIR = path.join(config.distribution.clientOutputDir, 'root')
+const ZIP_PATH = path.join(config.distribution.clientOutputDir, config.distribution.clientArchiveName)
+const VERSION_FILE = canonicalDataFile('clientVersion')
 
 // ── Version helpers ───────────────────────────────────────────────────────────
 

@@ -1,0 +1,469 @@
+openapi: 3.1.0
+info:
+  title: SkyMP Backend API
+  version: 2.0.0
+  description: Canonical API v2 for launchers, dashboards, and SkyMP game servers.
+servers:
+  - url: http://localhost:4000
+tags:
+  - name: Health
+  - name: Launcher
+  - name: Authentication
+  - name: Administration
+  - name: Game servers
+  - name: Integrations
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      operationId: getLiveness
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /health/ready:
+    get:
+      tags: [Health]
+      operationId: getReadiness
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '503': { $ref: '#/components/responses/JsonError' }
+  /api/v2/launcher/news:
+    get:
+      tags: [Launcher]
+      operationId: listLauncherNews
+      responses:
+        '200': { $ref: '#/components/responses/Collection' }
+  /api/v2/launcher/status:
+    get:
+      tags: [Launcher]
+      operationId: getLauncherStatus
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/launcher/servers:
+    get:
+      tags: [Launcher]
+      operationId: listLauncherServers
+      responses:
+        '200': { $ref: '#/components/responses/Collection' }
+  /api/v2/launcher/servers/{key}:
+    parameters:
+      - $ref: '#/components/parameters/ServerKey'
+    get:
+      tags: [Launcher]
+      operationId: getLauncherServer
+      parameters:
+        - $ref: '#/components/parameters/SessionHeader'
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '404': { $ref: '#/components/responses/JsonError' }
+  /api/v2/launcher/manifest:
+    get:
+      tags: [Launcher]
+      operationId: getLauncherManifest
+      responses:
+        '200': { $ref: '#/components/responses/Collection' }
+        '503': { $ref: '#/components/responses/JsonError' }
+  /api/v2/launcher/mods:
+    get:
+      tags: [Launcher]
+      operationId: listLauncherMods
+      responses:
+        '200': { $ref: '#/components/responses/Collection' }
+  /api/v2/launcher/metrics:
+    get:
+      tags: [Launcher]
+      operationId: getLauncherMetrics
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '503': { $ref: '#/components/responses/JsonError' }
+  /api/v2/launcher/client/version:
+    get:
+      tags: [Launcher]
+      operationId: getClientVersion
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '404': { $ref: '#/components/responses/JsonError' }
+  /api/v2/launcher/client/download:
+    get:
+      tags: [Launcher]
+      operationId: downloadClient
+      responses:
+        '200':
+          description: Client archive
+          content:
+            application/zip:
+              schema: { type: string, contentEncoding: binary }
+        '404': { $ref: '#/components/responses/JsonError' }
+  /api/v2/launcher/releases/current:
+    get:
+      tags: [Launcher]
+      operationId: getCurrentLauncherRelease
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/auth/discord/start:
+    get:
+      tags: [Authentication]
+      operationId: startLauncherDiscordLogin
+      parameters:
+        - name: state
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '302': { description: Redirect to Discord }
+        '400': { $ref: '#/components/responses/JsonError' }
+  /api/v2/auth/discord/callback:
+    get:
+      tags: [Authentication]
+      operationId: completeLauncherDiscordLogin
+      parameters:
+        - { name: code, in: query, required: true, schema: { type: string } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Browser completion page }
+        '400': { description: Invalid or expired OAuth flow }
+  /api/v2/auth/discord/status:
+    get:
+      tags: [Authentication]
+      operationId: getLauncherDiscordLoginStatus
+      parameters:
+        - { name: state, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '401': { $ref: '#/components/responses/JsonError' }
+  /api/v2/admin/auth/start:
+    get:
+      tags: [Administration, Authentication]
+      operationId: startDashboardLogin
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/auth/callback:
+    get:
+      tags: [Administration, Authentication]
+      operationId: completeDashboardLogin
+      responses:
+        '302': { description: Redirect to the dashboard }
+  /api/v2/admin/auth/session:
+    get:
+      tags: [Administration, Authentication]
+      operationId: getDashboardSession
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '401': { $ref: '#/components/responses/JsonError' }
+  /api/v2/admin/auth/logout:
+    post:
+      tags: [Administration, Authentication]
+      operationId: logoutDashboardSession
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/players:
+    get:
+      tags: [Administration]
+      operationId: listPlayers
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Collection' }
+        '401': { $ref: '#/components/responses/JsonError' }
+    post:
+      tags: [Administration]
+      operationId: createPlayer
+      security: [{ dashboardBearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '201': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/players/{profileId}:
+    parameters:
+      - $ref: '#/components/parameters/ProfileId'
+    get:
+      tags: [Administration]
+      operationId: getPlayer
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+    put:
+      tags: [Administration]
+      operationId: updatePlayer
+      security: [{ dashboardBearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/players/{profileId}/whitelist:
+    put:
+      tags: [Administration]
+      operationId: updatePlayerWhitelist
+      security: [{ dashboardBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/ProfileId' }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/players/{profileId}/ban:
+    put:
+      tags: [Administration]
+      operationId: updatePlayerBan
+      security: [{ dashboardBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/ProfileId' }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/access-policy:
+    get:
+      tags: [Administration]
+      operationId: getAccessPolicy
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+    put:
+      tags: [Administration]
+      operationId: updateAccessPolicy
+      security: [{ dashboardBearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/access-checks/{discordId}:
+    get:
+      tags: [Administration]
+      operationId: checkPlayerAccess
+      security: [{ dashboardBearer: [] }]
+      parameters:
+        - { name: discordId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/role-permissions:
+    get:
+      tags: [Administration]
+      operationId: listRolePermissions
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/role-permissions/{roleId}:
+    parameters:
+      - { name: roleId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Administration]
+      operationId: updateRolePermissions
+      security: [{ dashboardBearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+    delete:
+      tags: [Administration]
+      operationId: deleteRolePermissions
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/faction-assignments:
+    get:
+      tags: [Administration]
+      operationId: listFactionAssignments
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Collection' }
+    post:
+      tags: [Administration]
+      operationId: createFactionAssignment
+      security: [{ dashboardBearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '201': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/faction-assignments/{assignmentId}:
+    parameters:
+      - { name: assignmentId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Administration]
+      operationId: updateFactionAssignment
+      security: [{ dashboardBearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+    delete:
+      tags: [Administration]
+      operationId: deleteFactionAssignment
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/content/{resource}:
+    parameters:
+      - name: resource
+        in: path
+        required: true
+        description: lore, rules, or whitelist-notes
+        schema: { type: string, enum: [lore, rules, whitelist-notes] }
+    get:
+      tags: [Administration]
+      operationId: getManagedContent
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+    put:
+      tags: [Administration]
+      operationId: updateManagedContent
+      security: [{ dashboardBearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/admin/proxy/{path}:
+    parameters:
+      - { name: path, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Administration]
+      operationId: proxyAdminGet
+      security: [{ dashboardBearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+    post:
+      tags: [Administration]
+      operationId: proxyAdminPost
+      security: [{ dashboardBearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/game-servers/{key}/heartbeat:
+    post:
+      tags: [Game servers]
+      operationId: recordHeartbeat
+      parameters: [{ $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '403': { $ref: '#/components/responses/JsonError' }
+  /api/v2/game-servers/{key}/sessions/{token}:
+    get:
+      tags: [Game servers]
+      operationId: getGameSession
+      parameters:
+        - { $ref: '#/components/parameters/ServerKey' }
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '404': { $ref: '#/components/responses/JsonError' }
+  /api/v2/game-servers/{key}/profiles/{id}/access:
+    get:
+      tags: [Game servers]
+      operationId: checkProfileAccess
+      parameters:
+        - { $ref: '#/components/parameters/ServerKey' }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/game-servers/{key}/profiles/{id}/factions:
+    post:
+      tags: [Game servers]
+      operationId: assignProfileFaction
+      parameters:
+        - { $ref: '#/components/parameters/ServerKey' }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { $ref: '#/components/parameters/AuthTokenHeader' }
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '201': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/game-servers/{key}/profiles/{id}/factions/{assignmentId}:
+    delete:
+      tags: [Game servers]
+      operationId: removeProfileFaction
+      parameters:
+        - { $ref: '#/components/parameters/ServerKey' }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: assignmentId, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/AuthTokenHeader' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/game-servers/{key}/sessions/{token}/balance:
+    get:
+      tags: [Game servers]
+      operationId: getSessionBalance
+      parameters:
+        - { $ref: '#/components/parameters/ServerKey' }
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/game-servers/{key}/sessions/{token}/purchases:
+    post:
+      tags: [Game servers]
+      operationId: createSessionPurchase
+      parameters:
+        - { $ref: '#/components/parameters/ServerKey' }
+        - { name: token, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/AuthTokenHeader' }
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+  /api/v2/integrations/github:
+    post:
+      tags: [Integrations]
+      operationId: receiveGithubWebhook
+      parameters:
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody: { $ref: '#/components/requestBodies/JsonBody' }
+      responses:
+        '200': { $ref: '#/components/responses/JsonSuccess' }
+        '401': { $ref: '#/components/responses/JsonError' }
+components:
+  securitySchemes:
+    dashboardBearer:
+      type: http
+      scheme: bearer
+  parameters:
+    ServerKey:
+      name: key
+      in: path
+      required: true
+      schema: { type: string }
+    ProfileId:
+      name: profileId
+      in: path
+      required: true
+      schema: { type: integer }
+    SessionHeader:
+      name: X-Session
+      in: header
+      required: false
+      schema: { type: string }
+    AuthTokenHeader:
+      name: X-Auth-Token
+      in: header
+      required: true
+      schema: { type: string }
+  requestBodies:
+    JsonBody:
+      required: true
+      content:
+        application/json:
+          schema: { type: object, additionalProperties: true }
+  responses:
+    JsonSuccess:
+      description: Successful JSON response
+      content:
+        application/json:
+          schema: { type: object, additionalProperties: true }
+    Collection:
+      description: Collection response
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [items, total]
+            properties:
+              items: { type: array, items: {} }
+              total: { type: integer, minimum: 0 }
+    JsonError:
+      description: Structured API v2 error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: {}

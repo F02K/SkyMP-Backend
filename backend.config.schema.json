@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/skymp-backend/backend.config.schema.json",
+  "title": "SkyMP Backend project configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project", "http", "dashboard", "skymp", "discord", "access", "integrations", "distribution", "storage", "features"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "project": {
+      "type": "object",
+      "required": ["name", "websiteUrl", "publicApiUrl"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "websiteUrl": { "type": "string", "format": "uri" },
+        "publicApiUrl": { "type": "string", "format": "uri" }
+      },
+      "additionalProperties": false
+    },
+    "http": {
+      "type": "object",
+      "required": ["port", "corsOrigins", "trustProxy"],
+      "properties": {
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "corsOrigins": { "type": "array", "items": { "type": "string" } },
+        "trustProxy": { "type": ["boolean", "integer"] }
+      },
+      "additionalProperties": false
+    },
+    "dashboard": {
+      "type": "object",
+      "required": ["enabled", "port", "publicUrl", "apiBaseUrl"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "publicUrl": { "type": "string", "format": "uri" },
+        "apiBaseUrl": { "type": "string", "format": "uri" }
+      },
+      "additionalProperties": false
+    },
+    "skymp": {
+      "type": "object",
+      "required": ["host", "port", "serverName", "maxPlayers", "offlineMode", "npcEnabled", "gamemode", "masterUrl"],
+      "properties": {
+        "host": { "type": "string", "minLength": 1 },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "serverName": { "type": "string", "minLength": 1 },
+        "maxPlayers": { "type": "integer", "minimum": 1 },
+        "offlineMode": { "type": "boolean" },
+        "npcEnabled": { "type": "boolean" },
+        "gamemode": { "type": ["string", "null"] },
+        "masterUrl": { "type": "string", "format": "uri" }
+      },
+      "additionalProperties": false
+    },
+    "discord": {
+      "type": "object",
+      "required": ["launcherRedirectUri", "dashboardRedirectUri", "dashboardUserIds"],
+      "properties": {
+        "launcherRedirectUri": { "type": "string", "format": "uri" },
+        "dashboardRedirectUri": { "type": "string", "format": "uri" },
+        "dashboardUserIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "access": {
+      "type": "object",
+      "required": ["serverLocked", "lockedUserIds", "lockedRoleIds"],
+      "properties": {
+        "serverLocked": { "type": "boolean" },
+        "lockedUserIds": { "type": "array", "items": { "type": "string" } },
+        "lockedRoleIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "integrations": {
+      "type": "object",
+      "required": ["adminUrl", "clientBranch"],
+      "properties": {
+        "adminUrl": { "type": "string", "format": "uri" },
+        "clientBranch": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "distribution": {
+      "type": "object",
+      "required": ["clientRepositoryUrl", "clientSourceDir", "clientOutputDir", "clientArchiveName", "launcherUpdatePublicUrl"],
+      "properties": {
+        "clientRepositoryUrl": { "type": "string" },
+        "clientSourceDir": { "type": "string", "minLength": 1 },
+        "clientOutputDir": { "type": "string", "minLength": 1 },
+        "clientArchiveName": { "type": "string", "pattern": "^[^/\\\\]+\\.zip$" },
+        "launcherUpdatePublicUrl": { "type": "string", "format": "uri" }
+      },
+      "additionalProperties": false
+    },
+    "storage": {
+      "type": "object",
+      "required": ["dataDir"],
+      "properties": { "dataDir": { "type": "string", "minLength": 1 } },
+      "additionalProperties": false
+    },
+    "features": {
+      "type": "object",
+      "required": ["discordBot", "websocketRelay", "githubWebhook", "legacyDirectSessionCreation", "apiDocs"],
+      "properties": {
+        "discordBot": { "type": "boolean" },
+        "websocketRelay": { "type": "boolean" },
+        "githubWebhook": { "type": "boolean" },
+        "legacyDirectSessionCreation": { "type": "boolean" },
+        "apiDocs": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -11,15 +11,21 @@
 
 const fs   = require('fs')
 const path = require('path')
+const config = require('../src/config')
 
 // ── Source paths ──────────────────────────────────────────────────────────────
 
 // skymp build output Data/ directory
-const SKYMP_DATA = 'E:\\Github\\skymp\\build\\dist\\client\\Data'
+const SKYMP_DATA = process.env.SKYMP_BUILD_DATA_DIR
+
+if (!SKYMP_DATA) {
+  console.error('Set SKYMP_BUILD_DATA_DIR to the SkyMP client build Data directory.')
+  process.exit(1)
+}
 
 // ── Destination ───────────────────────────────────────────────────────────────
 
-const ROOT_DEST = path.join(__dirname, '..', 'public', 'files', 'root')
+const ROOT_DEST = path.join(config.distribution.clientOutputDir, 'root')
 const DATA_DEST = path.join(ROOT_DEST, 'Data')
 
 fs.mkdirSync(DATA_DEST, { recursive: true })

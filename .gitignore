@@ -8,8 +8,14 @@ sources/skse/*.dll
 
 # ── Generated output ───────────────────────────────────────────────────────────
 # Both files are rebuilt by `npm run merge` — do not track them in git.
-public/files/frostfall-client.zip
+public/files/*.zip
 data/files-version.json
+data/distribution/client-version.json
+data/sessions/
+data/players/balances.json
+data.backup-*/
+public/launcher-updates/*
+!public/launcher-updates/.gitkeep
 # public/files/root/ is rebuilt by the merge pipeline.
 # Uncomment the line below if you prefer to generate it on the server rather
 # than track it in git (requires running `npm run merge` on every deploy).
@@ -155,6 +161,5 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-package-lock.json
 sources/skse/Data/Platform/Distribution/RuntimeDependencies/libcef.dll
 sources/skse/Data/Platform/Distribution/RuntimeDependencies/libnode.dll
