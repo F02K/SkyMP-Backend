@@ -1,5 +1,11 @@
 # SkyMP Backend
 
+> [!WARNING]
+> **Deprecated and frozen.** This backend is not part of the current
+> Directory-managed SkyMP stack and will not receive the unversioned API
+> cutover. New and existing deployments should migrate to the
+> [SkyMP Managed Backend](https://github.com/f02k/skymp/tree/master/skymp-backend).
+
 SkyMP Backend is a configurable backend template for SkyMP launchers and multiplayer servers. It provides launcher content and client files, Discord authentication, the SkyMP master API, access and player management, an administrative dashboard, a WebSocket relay, and automatic launcher-update hosting.
 
 ## Quick start
